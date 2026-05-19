@@ -8,31 +8,40 @@ trait HasRoleChecks
 {
     protected function esAdmin(Usuario $usuario): bool
     {
-        return $usuario->activo && $usuario->rol && strtolower($usuario->rol->nombre) === 'admin';
+        if (!$usuario->activo || !$usuario->rol) return false;
+        $nombreRol = strtolower($usuario->rol->nombre);
+        return $nombreRol === 'admin' || 
+               $usuario->hasPermission('usuarios.gestionar') || 
+               $usuario->hasPermission('roles.asignar');
     }
 
     protected function esTesorero(Usuario $usuario): bool
     {
-        return $usuario->activo && $usuario->rol && strtolower($usuario->rol->nombre) === 'tesorero';
+        if (!$usuario->activo || !$usuario->rol) return false;
+        $nombreRol = strtolower($usuario->rol->nombre);
+        return $nombreRol === 'tesorero' || 
+               $usuario->hasPermission('pagos.registrar') ||
+               $usuario->hasPermission('pagos.ver');
     }
 
     protected function esSecretario(Usuario $usuario): bool
     {
-        return $usuario->activo && $usuario->rol && strtolower($usuario->rol->nombre) === 'secretario';
+        if (!$usuario->activo || !$usuario->rol) return false;
+        $nombreRol = strtolower($usuario->rol->nombre);
+        return $nombreRol === 'secretario' || 
+               $usuario->hasPermission('inscripciones.crear');
     }
 
     protected function esAdminOTesorero(Usuario $usuario): bool
     {
-        if (!$usuario->activo || !$usuario->rol) return false;
-        $rol = strtolower($usuario->rol->nombre);
-        return in_array($rol, ['admin', 'tesorero']);
+        if (!$usuario->activo) return false;
+        return $this->esAdmin($usuario) || $this->esTesorero($usuario);
     }
 
     protected function esAdminOSecretario(Usuario $usuario): bool
     {
-        if (!$usuario->activo || !$usuario->rol) return false;
-        $rol = strtolower($usuario->rol->nombre);
-        return in_array($rol, ['admin', 'secretario']);
+        if (!$usuario->activo) return false;
+        return $this->esAdmin($usuario) || $this->esSecretario($usuario);
     }
 
     protected function tieneAcceso(Usuario $usuario): bool

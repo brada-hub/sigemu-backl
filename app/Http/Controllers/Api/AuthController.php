@@ -25,7 +25,7 @@ class AuthController extends Controller
             ]);
         }
 
-        $usuario = Auth::user()->load('persona');
+        $usuario = Auth::user()->load(['persona', 'rol.permisos']);
 
         if (!$usuario->activo) {
             Auth::logout();
@@ -40,6 +40,7 @@ class AuthController extends Controller
                 'id_user'  => $usuario->id_user,
                 'username' => $usuario->username,
                 'rol'      => $usuario->rol ? $usuario->rol->nombre : null,
+                'permisos' => $usuario->rol ? $usuario->rol->permisos->pluck('slug')->toArray() : [],
                 'debe_cambiar_password' => $usuario->debe_cambiar_password,
                 'persona'  => $usuario->persona ? [
                     'nombres' => $usuario->persona->nombres,
@@ -57,7 +58,10 @@ class AuthController extends Controller
 
     public function me(Request $request): JsonResponse
     {
-        return response()->json($request->user()->load(['persona', 'rol']));
+        $usuario = $request->user()->load(['persona', 'rol.permisos']);
+        $data = $usuario->toArray();
+        $data['permisos'] = $usuario->rol ? $usuario->rol->permisos->pluck('slug')->toArray() : [];
+        return response()->json($data);
     }
 
     public function cambiarPassword(Request $request): JsonResponse
