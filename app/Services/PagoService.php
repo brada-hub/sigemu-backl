@@ -33,6 +33,13 @@ class PagoService
         }
 
         return DB::transaction(function () use ($inscripcion, $datos, $usuarioId) {
+            if (empty($datos['nro_comprobante'])) {
+                $count = Pago::withTrashed()->whereHas('inscripcion', function($q) use ($inscripcion) {
+                    $q->where('festividad_id', $inscripcion->festividad_id);
+                })->count();
+                $datos['nro_comprobante'] = str_pad((string)($count + 1), 4, '0', STR_PAD_LEFT);
+            }
+
             $pago = $this->pagoRepository->crear([
                 ...$datos,
                 'inscripcion_id' => $inscripcion->id_inscripcion,
