@@ -9,6 +9,7 @@ use App\Models\Pago;
 use App\Repositories\Contracts\InscripcionRepositoryInterface;
 use App\Repositories\Contracts\PagoRepositoryInterface;
 use App\Services\PagoService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -81,5 +82,79 @@ class PagoController extends Controller
         $pago = Pago::where('inscripcion_id', $inscripcionId)->findOrFail($pagoId);
         $this->pagoService->eliminar($pago);
         return response()->json(['message' => 'Pago eliminado y saldo recalculado.']);
+    }
+
+    /**
+     * Genera un PDF del ticket/comprobante de pago.
+     */
+    public function ticket(int $inscripcionId, int $pagoId)
+    {
+        $pago = Pago::with(['inscripcion.persona', 'inscripcion.festividad', 'inscripcion.bloque', 'inscripcion.tipoFraterno', 'registradoPor.persona'])
+            ->where('inscripcion_id', $inscripcionId)
+            ->findOrFail($pagoId);
+
+        $inscripcion = $pago->inscripcion;
+        $persona = $inscripcion->persona;
+        $festividad = $inscripcion->festividad;
+
+        // Nombre completo del fraterno
+        $fraternoNombre = trim(
+            ($persona->nombres ?? '') . ' ' .
+            ($persona->primer_apellido ?? '') . ' ' .
+            ($persona->segundo_apellido ?? '')
+        );
+        $fraternoNombre = mb_strtoupper($fraternoNombre);
+
+        // Usuario que registró el pago
+        $usuario = $pago->registradoPor;
+        $usuarioRegistro = 'Sistema';
+        if ($usuario && $usuario->persona) {
+            $usuarioRegistro = trim($usuario->persona->nombres . ' ' . ($usuario->persona->primer_apellido ?? ''));
+        } elseif ($usuario) {
+            $usuarioRegistro = $usuario->username;
+        }
+
+        // Histórico de pagos: Sumamos solo los pagos anteriores o iguales a este pago exacto
+        $pagosAnteriores = Pago::where('inscripcion_id', $inscripcionId)
+            ->where('id_pagos', '<', $pago->id_pagos)
+            ->sum('monto_pagado');
+            
+        $totalPagadoHastaAhora = $pagosAnteriores + $pago->monto_pagado;
+        $saldoPendiente = $inscripcion->monto_asignado - $totalPagadoHastaAhora;
+        $saldoAnterior = $inscripcion->monto_asignado - $pagosAnteriores;
+
+        // Ruta del logo embebida como base64 para que DomPDF la renderice
+        $logoFile = public_path('images/sigemu.png');
+        $logoBase64 = '';
+        if (file_exists($logoFile)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logoFile));
+        }
+
+        $data = [
+            'nro_comprobante'  => $pago->nro_comprobante ?? 'S/N',
+            'fraterno_nombre'  => $fraternoNombre ?: 'SIN NOMBRE',
+            'ci_fraterno'      => $persona->ci ?? 'N/A',
+            'festividad'       => mb_strtoupper($festividad->nombre ?? 'N/A'),
+            'metodo_pago'      => $pago->metodo_pago,
+            'bloque_nombre'    => mb_strtoupper($inscripcion->bloque->nombre ?? 'SIN BLOQUE'),
+            'tipo_fraterno'    => mb_strtoupper($inscripcion->tipoFraterno->nombre ?? 'NUEVO'),
+            'monto_asignado'   => number_format((float) $inscripcion->monto_asignado, 0, ',', '.'),
+            'pagos_anteriores' => number_format((float) $pagosAnteriores, 0, ',', '.'),
+            'saldo_anterior'   => number_format((float) max(0, $saldoAnterior), 0, ',', '.'),
+            'monto_pagado'     => number_format((float) $pago->monto_pagado, 0, ',', '.'),
+            'saldo_pendiente'  => number_format(max(0, $saldoPendiente), 0, ',', '.'),
+            'observaciones'    => $pago->observaciones ?: 'NINGUNA',
+            'fecha_pago'       => $pago->fecha_pago ? $pago->fecha_pago->format('d/m/Y') : '',
+            'hora_pago'        => $pago->created_at ? $pago->created_at->format('H:i') : '',
+            'usuario_registro' => $usuarioRegistro,
+            'logo_path'        => $logoBase64,
+        ];
+
+        $pdf = Pdf::loadView('pdf.ticket-pago', $data);
+        $pdf->setPaper('letter', 'portrait');
+
+        $filename = "ticket_pago_{$pago->nro_comprobante}.pdf";
+
+        return $pdf->stream($filename);
     }
 }

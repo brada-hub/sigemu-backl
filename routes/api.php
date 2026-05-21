@@ -64,5 +64,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('pagos',          [PagoController::class, 'index']);
         Route::post('pagos',         [PagoController::class, 'store']);
         Route::delete('pagos/{pago}', [PagoController::class, 'destroy']);
+        Route::get('pagos/{pago}/ticket', [PagoController::class, 'ticket']);
     });
 });
