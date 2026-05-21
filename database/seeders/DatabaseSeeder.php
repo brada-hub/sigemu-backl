@@ -109,8 +109,8 @@ class DatabaseSeeder extends Seeder
         // 7. Festividad y Categorias
         $festividad = Festividad::create([
             'nombre' => 'VIRGEN DE URKUPIÑA 2026',
-            'fecha_inicio' => '14-08-2026',
-            'fecha_fin' => '18-08-2026',
+            'fecha_inicio' => '2026-08-14',
+            'fecha_fin' => '2026-08-18',
             'estado' => 'Activa'
         ]);
 
@@ -124,7 +124,7 @@ class DatabaseSeeder extends Seeder
         CategoriaCosto::create([
             'festividad_id' => $festividad->id_festividad,
             'id_tipo_fraterno' => $tipoAntiguo->id_tipo_fraterno,
-            'nombre' => 'CUOTA COCMPLETA ANTIGUO',
+            'nombre' => 'CUOTA COMPLETA ANTIGUO',
             'monto_total' => 800
         ]);
     }

@@ -34,14 +34,17 @@ class PagoService
 
         return DB::transaction(function () use ($inscripcion, $datos, $usuarioId) {
             if (empty($datos['nro_comprobante'])) {
-                // Obtener el número de comprobante numérico máximo bajo esta festividad y sumar 1
-                $maxComprobante = Pago::withTrashed()
+                // Obtener todos los números de la festividad actual y filtrar solo los numéricos en PHP
+                // (Esto evita el uso de REGEXP que no es compatible nativamente en SQLite)
+                $comprobantes = Pago::withTrashed()
                     ->whereHas('inscripcion', function($q) use ($inscripcion) {
                         $q->where('festividad_id', $inscripcion->festividad_id);
                     })
-                    ->whereRaw('nro_comprobante REGEXP "^[0-9]+$"')
-                    ->selectRaw('MAX(CAST(nro_comprobante AS UNSIGNED)) as max_num')
-                    ->value('max_num');
+                    ->pluck('nro_comprobante');
+
+                $maxComprobante = $comprobantes
+                    ->filter(fn($nro) => is_numeric($nro))
+                    ->max(fn($nro) => (int) $nro);
 
                 $nextNum = $maxComprobante ? ($maxComprobante + 1) : 1;
 
