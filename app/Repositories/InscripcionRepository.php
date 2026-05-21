@@ -43,6 +43,12 @@ class InscripcionRepository implements InscripcionRepositoryInterface
         return $inscripcion->fresh();
     }
 
+    public function eliminar(int $id): void
+    {
+        $inscripcion = $this->encontrar($id);
+        $inscripcion->delete();
+    }
+
     public function actualizarEstadoPago(Inscripcion $inscripcion): void
     {
         $totalPagado = $inscripcion->pagos()->sum('monto_pagado');

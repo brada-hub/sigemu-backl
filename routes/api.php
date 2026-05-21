@@ -54,6 +54,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('inscripciones/{inscripcion}',          [InscripcionController::class, 'show']);
+    Route::delete('inscripciones/{inscripcion}',       [InscripcionController::class, 'destroy']);
+
 
     // Pagos
     Route::get('pagos', [PagoController::class, 'globalIndex']);

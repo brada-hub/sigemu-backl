@@ -36,4 +36,18 @@ class InscripcionController extends Controller
     {
         return new InscripcionResource($this->inscripcionRepository->encontrar($id));
     }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $inscripcion = $this->inscripcionRepository->encontrar($id);
+        
+        if ($inscripcion->pagos()->exists()) {
+            return response()->json(['message' => 'No se puede retirar un fraterno que ya tiene pagos registrados. Debe anular los pagos primero.'], 422);
+        }
+
+        $this->inscripcionRepository->eliminar($id);
+        
+        return response()->json(['message' => 'Fraterno retirado de la festividad correctamente.']);
+    }
 }
+

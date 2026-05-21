@@ -11,5 +11,6 @@ interface InscripcionRepositoryInterface
     public function encontrar(int $id): Inscripcion;
     public function crear(array $datos): Inscripcion;
     public function actualizar(Inscripcion $inscripcion, array $datos): Inscripcion;
+    public function eliminar(int $id): void;
     public function actualizarEstadoPago(Inscripcion $inscripcion): void;
 }
