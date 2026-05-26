@@ -54,6 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     Route::get('inscripciones/{inscripcion}',          [InscripcionController::class, 'show']);
+    Route::put('inscripciones/{inscripcion}',          [InscripcionController::class, 'update']);
     Route::delete('inscripciones/{inscripcion}',       [InscripcionController::class, 'destroy']);
 
 

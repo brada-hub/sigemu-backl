@@ -19,9 +19,15 @@ class InscripcionController extends Controller
 
     public function index(Request $request, int $festividadId)
     {
+        $perPage = $request->input('per_page', 15);
+        if ($perPage == 0) {
+            $perPage = 10000;
+        }
+
         $inscripciones = $this->inscripcionRepository->paginarPorFestividad(
             $festividadId,
-            $request->only(['estado_pago', 'id_tipo_fraterno', 'id_bloque', 'buscar'])
+            $request->only(['estado_pago', 'id_tipo_fraterno', 'id_bloque', 'buscar']),
+            $perPage
         );
         return InscripcionResource::collection($inscripciones);
     }
@@ -35,6 +41,21 @@ class InscripcionController extends Controller
     public function show(int $id): InscripcionResource
     {
         return new InscripcionResource($this->inscripcionRepository->encontrar($id));
+    }
+
+    public function update(Request $request, int $id): InscripcionResource
+    {
+        $datos = $request->validate([
+            'id_tipo_fraterno' => 'required|exists:tipo_fraterno,id_tipo_fraterno',
+            'id_bloque' => 'required|exists:bloques,id_bloque',
+            'categoria_costo_id' => 'required|exists:categorias_costo,id_categoria_costo',
+            'monto_asignado' => 'required|numeric|min:0'
+        ]);
+
+        $inscripcion = $this->inscripcionRepository->encontrar($id);
+        $inscripcion = $this->inscripcionRepository->actualizar($inscripcion, $datos);
+        
+        return new InscripcionResource($inscripcion->load(['persona', 'festividad', 'categoriaCosto', 'bloque', 'tipoFraterno']));
     }
 
     public function destroy(int $id): JsonResponse

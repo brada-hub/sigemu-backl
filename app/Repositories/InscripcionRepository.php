@@ -40,6 +40,9 @@ class InscripcionRepository implements InscripcionRepositoryInterface
     public function actualizar(Inscripcion $inscripcion, array $datos): Inscripcion
     {
         $inscripcion->update($datos);
+        if (isset($datos['monto_asignado'])) {
+            $this->actualizarEstadoPago($inscripcion);
+        }
         return $inscripcion->fresh();
     }
 

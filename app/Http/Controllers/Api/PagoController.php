@@ -63,8 +63,10 @@ class PagoController extends Controller
         if ($request->boolean('export')) {
             return PagoResource::collection($query->get());
         }
-            
-        return PagoResource::collection($query->paginate($request->input('per_page', 15)));
+        $perPage = $request->input('per_page', 15);
+        if ($perPage == 0) $perPage = 10000;
+        
+        return PagoResource::collection($query->paginate($perPage));
     }
 
     public function store(StorePagoRequest $request, int $inscripcionId): PagoResource

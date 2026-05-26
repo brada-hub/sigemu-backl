@@ -11,6 +11,11 @@ class PersonaController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $perPage = $request->input('per_page', 15);
+        if ($perPage == 0) {
+            $perPage = 10000;
+        }
+
         $personas = Persona::with('sexo')
             ->when($request->buscar, function ($q, $buscar) {
                 $q->where('nombres', 'like', "%{$buscar}%")
@@ -23,7 +28,7 @@ class PersonaController extends Controller
                 $q->whereDoesntHave('inscripciones', fn($qi) => $qi->where('festividad_id', $festividadId));
             })
             ->orderBy('primer_apellido')
-            ->paginate(15);
+            ->paginate($perPage);
             
         return response()->json($personas);
     }
