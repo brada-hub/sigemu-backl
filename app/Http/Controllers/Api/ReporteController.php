@@ -15,18 +15,18 @@ class ReporteController extends Controller
         private readonly ReporteService $reporteService
     ) {}
 
-    public function resumenFestividad(int $festividadId): JsonResponse
+    public function resumenFestividad(Request $request, int $festividadId): JsonResponse
     {
         $this->authorize('ver-reportes');
 
-        return response()->json($this->reporteService->resumenFestividad($festividadId));
+        return response()->json($this->reporteService->resumenFestividad($festividadId, $request->id_tipo_persona));
     }
 
-    public function porBloque(int $festividadId): JsonResponse
+    public function porBloque(Request $request, int $festividadId): JsonResponse
     {
         $this->authorize('ver-reportes');
 
-        return response()->json($this->reporteService->porBloque($festividadId));
+        return response()->json($this->reporteService->porBloque($festividadId, $request->id_tipo_persona));
     }
 
     public function porFecha(Request $request, int $festividadId): JsonResponse
@@ -39,7 +39,7 @@ class ReporteController extends Controller
         ]);
 
         return response()->json(
-            $this->reporteService->porFecha($festividadId, $request->desde, $request->hasta)
+            $this->reporteService->porFecha($festividadId, $request->desde, $request->hasta, $request->id_tipo_persona)
         );
     }
 
@@ -57,7 +57,8 @@ class ReporteController extends Controller
         $query = Inscripcion::with(['persona', 'festividad', 'bloque', 'tipoFraterno', 'categoriaCosto', 'pagos.registradoPor.persona'])
             ->when($request->festividad_id, fn($q, $fest) => $q->where('festividad_id', $fest))
             ->when($request->id_bloque, fn($q, $bloque) => $q->where('id_bloque', $bloque))
-            ->when($request->id_tipo_fraterno, fn($q, $tipo) => $q->where('id_tipo_fraterno', $tipo));
+            ->when($request->id_tipo_fraterno, fn($q, $tipo) => $q->where('id_tipo_fraterno', $tipo))
+            ->when($request->id_tipo_persona, fn($q, $tipoPersona) => $q->whereHas('persona', fn($pq) => $pq->where('id_tipo_persona', $tipoPersona)));
 
         if ($request->metodo_pago || $request->registrado_por_id) {
              $query->whereHas('pagos', function ($q) use ($request) {

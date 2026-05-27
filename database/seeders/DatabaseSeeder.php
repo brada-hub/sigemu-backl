@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Fraternidad;
 use App\Models\Sexo;
 use App\Models\TipoFraterno;
+use App\Models\TipoPersona;
 use App\Models\Bloque;
 use App\Models\Rol;
 use App\Models\Permiso;
@@ -20,26 +21,29 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Crear tipos de persona primero
+        $this->call(TipoPersonaSeeder::class);
+
         // 1. Fraternidad
-        $fraternidad = Fraternidad::create(['nombre' => 'MORENADA UNITEPC']);
+        $fraternidad = Fraternidad::firstOrCreate(['nombre' => 'MORENADA UNITEPC']);
 
         // 2. Sexo
-        $sexoM = Sexo::create(['sexo' => 'MASCULINO']);
-        $sexoF = Sexo::create(['sexo' => 'FEMENINO']);
+        $sexoM = Sexo::firstOrCreate(['sexo' => 'MASCULINO']);
+        $sexoF = Sexo::firstOrCreate(['sexo' => 'FEMENINO']);
 
         // 3. Tipo Fraterno
-        $tipoNuevo = TipoFraterno::create(['nombre' => 'NUEVO']);
-        $tipoAntiguo = TipoFraterno::create(['nombre' => 'ANTIGUO']);
+        $tipoNuevo = TipoFraterno::firstOrCreate(['nombre' => 'NUEVO']);
+        $tipoAntiguo = TipoFraterno::firstOrCreate(['nombre' => 'ANTIGUO']);
         ;
 
         // 4. Bloques
-        $bloqueCentral = Bloque::create(['nombre' => 'Central', 'id_fraternidad' => $fraternidad->id_fraternidad]);
-        $bloqueIntocables = Bloque::create(['nombre' => 'Intocables', 'id_fraternidad' => $fraternidad->id_fraternidad]);
+        $bloqueCentral = Bloque::firstOrCreate(['nombre' => 'Central', 'id_fraternidad' => $fraternidad->id_fraternidad]);
+        $bloqueIntocables = Bloque::firstOrCreate(['nombre' => 'Intocables', 'id_fraternidad' => $fraternidad->id_fraternidad]);
 
         // 5. Roles y Permisos
-        $rolAdmin = Rol::create(['nombre' => 'Admin']);
-        $rolTesorero = Rol::create(['nombre' => 'Tesorero']);
-        $rolSecretario = Rol::create(['nombre' => 'Secretario']);
+        $rolAdmin = Rol::firstOrCreate(['nombre' => 'Admin']);
+        $rolTesorero = Rol::firstOrCreate(['nombre' => 'Tesorero']);
+        $rolSecretario = Rol::firstOrCreate(['nombre' => 'Secretario']);
 
         // Definir permisos
         $permisos = [
@@ -65,7 +69,7 @@ class DatabaseSeeder extends Seeder
 
         $permisosIds = [];
         foreach ($permisos as $p) {
-            $permiso = Permiso::create($p);
+            $permiso = Permiso::firstOrCreate(['slug' => $p['slug']], ['descripcion' => $p['descripcion']]);
             $permisosIds[$p['slug']] = $permiso->id_permiso;
         }
 
@@ -90,42 +94,50 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // 6. Personas y Usuarios
-        $personaAdmin = Persona::create([
-            'nombres' => 'Admin',
-            'primer_apellido' => 'Sistema',
-            'ci' => '0000000',
-            'id_sexo' => $sexoM->id_sexo,
-            'celular' => '70000000',
-            'correo_personal' => 'admin@morenada.com'
-        ]);
+        $personaAdmin = Persona::firstOrCreate(
+            ['ci' => '0000000'],
+            [
+                'nombres' => 'Admin',
+                'primer_apellido' => 'Sistema',
+                'id_sexo' => $sexoM->id_sexo,
+                'celular' => '70000000',
+                'correo_personal' => 'admin@morenada.com'
+            ]
+        );
 
-        $usuarioAdmin = Usuario::create([
-            'id_persona' => $personaAdmin->id_persona,
-            'username' => 'admin',
-            'password' => Hash::make('password'),
-            'id_rol' => $rolAdmin->id_rol
-        ]);
+        $usuarioAdmin = Usuario::firstOrCreate(
+            ['username' => 'admin'],
+            [
+                'id_persona' => $personaAdmin->id_persona,
+                'password' => Hash::make('password'),
+                'id_rol' => $rolAdmin->id_rol
+            ]
+        );
 
         // 7. Festividad y Categorias
-        $festividad = Festividad::create([
-            'nombre' => 'VIRGEN DE URKUPIÑA 2026',
-            'fecha_inicio' => '2026-08-14',
-            'fecha_fin' => '2026-08-18',
-            'estado' => 'Activa'
-        ]);
+        $festividad = Festividad::firstOrCreate(
+            ['nombre' => 'VIRGEN DE URKUPIÑA 2026'],
+            [
+                'fecha_inicio' => '2026-08-14',
+                'fecha_fin' => '2026-08-18',
+                'estado' => 'Activa'
+            ]
+        );
 
-        CategoriaCosto::create([
-            'festividad_id' => $festividad->id_festividad,
-            'id_tipo_fraterno' => $tipoNuevo->id_tipo_fraterno,
-            'nombre' => 'CUOTA COMPLETA NUEVO',
-            'monto_total' => 1200
-        ]);
+        CategoriaCosto::firstOrCreate(
+            ['festividad_id' => $festividad->id_festividad, 'id_tipo_fraterno' => $tipoNuevo->id_tipo_fraterno],
+            [
+                'nombre' => 'CUOTA COMPLETA NUEVO',
+                'monto_total' => 1200
+            ]
+        );
 
-        CategoriaCosto::create([
-            'festividad_id' => $festividad->id_festividad,
-            'id_tipo_fraterno' => $tipoAntiguo->id_tipo_fraterno,
-            'nombre' => 'CUOTA COMPLETA ANTIGUO',
-            'monto_total' => 800
-        ]);
+        CategoriaCosto::firstOrCreate(
+            ['festividad_id' => $festividad->id_festividad, 'id_tipo_fraterno' => $tipoAntiguo->id_tipo_fraterno],
+            [
+                'nombre' => 'CUOTA COMPLETA ANTIGUO',
+                'monto_total' => 800
+            ]
+        );
     }
 }

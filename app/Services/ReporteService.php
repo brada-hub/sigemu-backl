@@ -10,12 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 class ReporteService
 {
-    public function resumenFestividad(int $festividadId): array
+    public function resumenFestividad(int $festividadId, ?int $idTipoPersona = null): array
     {
         $festividad = Festividad::findOrFail($festividadId);
 
         $inscripciones = Inscripcion::with(['pagos', 'persona.sexo', 'bloque', 'tipoFraterno'])
-            ->where('festividad_id', $festividadId)->get();
+            ->where('festividad_id', $festividadId)
+            ->when($idTipoPersona, fn($q) => $q->whereHas('persona', fn($pq) => $pq->where('id_tipo_persona', $idTipoPersona)))
+            ->get();
 
         $totalInscritos = $inscripciones->count();
         $totalEsperado = $inscripciones->sum('monto_asignado');
@@ -104,10 +106,12 @@ class ReporteService
         ];
     }
 
-    public function porBloque(int $festividadId): array
+    public function porBloque(int $festividadId, ?int $idTipoPersona = null): array
     {
         $inscripciones = Inscripcion::with(['pagos', 'bloque'])
-            ->where('festividad_id', $festividadId)->get();
+            ->where('festividad_id', $festividadId)
+            ->when($idTipoPersona, fn($q) => $q->whereHas('persona', fn($pq) => $pq->where('id_tipo_persona', $idTipoPersona)))
+            ->get();
 
         return $inscripciones->groupBy('id_bloque')->map(function($grupo) {
             $totalPagado = $grupo->sum(fn($ins) => $ins->pagos->sum('monto_pagado'));
@@ -122,10 +126,17 @@ class ReporteService
         })->values()->sortByDesc('total_recaudado')->toArray();
     }
 
-    public function porFecha(int $festividadId, string $desde, string $hasta): array
+    public function porFecha(int $festividadId, string $desde, string $hasta, ?int $idTipoPersona = null): array
     {
-        return Pago::whereHas('inscripcion', fn($q) => $q->where('festividad_id', $festividadId))
-            ->whereBetween('fecha_pago', [$desde, $hasta])
+        $query = Pago::whereHas('inscripcion', function($q) use ($festividadId, $idTipoPersona) {
+            $q->where('festividad_id', $festividadId);
+            if ($idTipoPersona) {
+                $q->whereHas('persona', fn($pq) => $pq->where('id_tipo_persona', $idTipoPersona));
+            }
+        })
+            ->whereBetween('fecha_pago', [$desde, $hasta]);
+
+        return $query
             ->selectRaw('DATE(fecha_pago) as fecha, SUM(monto_pagado) as total, COUNT(*) as cantidad_pagos')
             ->groupBy('fecha')
             ->orderBy('fecha')

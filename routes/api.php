@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\BloqueController;
 use App\Http\Controllers\Api\FestividadController;
 use App\Http\Controllers\Api\CategoriaCostoController;
 use App\Http\Controllers\Api\TipoFraternoController;
+use App\Http\Controllers\Api\TipoPersonaController;
 use App\Http\Controllers\Api\PersonaController;
 use App\Http\Controllers\Api\InscripcionController;
 use App\Http\Controllers\Api\PagoController;
@@ -30,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('festividades', FestividadController::class);
     Route::apiResource('festividades.categorias-costo', CategoriaCostoController::class)->shallow();
     Route::get('tipos-fraternos', [TipoFraternoController::class, 'index']);
+    Route::apiResource('tipos-personas', TipoPersonaController::class);
     Route::get('fraternidades', [FraternidadController::class, 'index']);
     Route::post('roles', [RolController::class, 'store']);
     Route::get('roles', [RolController::class, 'index']);
