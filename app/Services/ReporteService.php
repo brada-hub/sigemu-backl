@@ -35,7 +35,7 @@ class ReporteService
                 'total_recaudado' => $totalPagado,
                 'eficiencia' => $montoAsignado > 0 ? round(($totalPagado / $montoAsignado) * 100) : 0
             ];
-        })->values()->sortByDesc('total_recaudado')->toArray();
+        })->sortByDesc('total_recaudado')->values()->toArray();
 
         // Tipos
         $tipos = $inscripciones->groupBy('id_tipo_fraterno')->map(fn($g) => $g->count());
@@ -123,7 +123,7 @@ class ReporteService
                 'total_recaudado' => $totalPagado,
                 'total_pendiente' => $montoAsignado - $totalPagado
             ];
-        })->values()->sortByDesc('total_recaudado')->toArray();
+        })->sortByDesc('total_recaudado')->values()->toArray();
     }
 
     public function porFecha(int $festividadId, string $desde, string $hasta, ?int $idTipoPersona = null): array
