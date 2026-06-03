@@ -54,7 +54,7 @@ class ReporteController extends Controller
     {
         $this->authorize('ver-reportes');
 
-        $query = Inscripcion::with(['persona', 'festividad', 'bloque', 'tipoFraterno', 'categoriaCosto', 'pagos.registradoPor.persona'])
+        $query = Inscripcion::with(['persona.tipoPersona', 'festividad', 'bloque', 'tipoFraterno', 'categoriaCosto', 'pagos.registradoPor.persona'])
             ->when($request->festividad_id, fn($q, $fest) => $q->where('festividad_id', $fest))
             ->when($request->id_bloque, fn($q, $bloque) => $q->where('id_bloque', $bloque))
             ->when($request->id_tipo_fraterno, fn($q, $tipo) => $q->where('id_tipo_fraterno', $tipo))
