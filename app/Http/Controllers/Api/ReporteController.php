@@ -58,7 +58,8 @@ class ReporteController extends Controller
             ->when($request->festividad_id, fn($q, $fest) => $q->where('festividad_id', $fest))
             ->when($request->id_bloque, fn($q, $bloque) => $q->where('id_bloque', $bloque))
             ->when($request->id_tipo_fraterno, fn($q, $tipo) => $q->where('id_tipo_fraterno', $tipo))
-            ->when($request->id_tipo_persona, fn($q, $tipoPersona) => $q->whereHas('persona', fn($pq) => $pq->where('id_tipo_persona', $tipoPersona)));
+            ->when($request->id_tipo_persona, fn($q, $tipoPersona) => $q->whereHas('persona', fn($pq) => $pq->where('id_tipo_persona', $tipoPersona)))
+            ->when($request->estado_pago, fn($q, $estado) => $q->where('estado_pago', $estado));
 
         if ($request->metodo_pago || $request->registrado_por_id) {
              $query->whereHas('pagos', function ($q) use ($request) {
